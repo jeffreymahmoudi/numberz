@@ -9,16 +9,24 @@ const randomNumberBetween = (min, max) =>
 
 class Number extends React.Component {
   render() {
-    return <div className="number">{this.props.value}</div>;
+    return (
+      <div
+        className="number"
+        style={{ opacity: this.props.clickable ? 1 : 0.3 }}
+        onClick={() => console.log(this.props.id)}
+      >
+        {this.props.value}
+      </div>
+    );
   }
 }
 
 class Game extends React.Component {
   // state = {
-  //   gameStatus: 'new', //new, playing, won, lost
+  //   gameStatus: "new", //new, playing, won, lost
   //   remainingSeconds: this.props.initialSeconds,
-  //   selectedIds: [],
-  // }
+  //   selectedIds: []
+  // };
 
   state = {
     gameStatus: "playing",
@@ -35,6 +43,9 @@ class Game extends React.Component {
     this.props.challengeSize - 2
   ).reduce((acc, curr) => acc + curr, 0);
 
+  isNumberAvailable = numberIndex =>
+    this.state.selectedIds.indexOf(numberIndex) === -1;
+
   render() {
     return (
       <div className="game">
@@ -43,15 +54,31 @@ class Game extends React.Component {
           Pick {this.props.challengeSize - 2} numbers that sum to the target in{" "}
           {this.props.initialSeconds} seconds
         </div>
-        <div className="target">{this.target}</div>
+        <div
+          className="target"
+          style={{ backgroundColor: Game.bgColors[this.state.gameStatus] }}
+        >
+          {this.state.gameStatus === "new" ? "?" : this.target}
+        </div>
         <div className="challenge-numbers">
           {this.challengeNumbers.map((value, index) => (
-            <Number key={index} value={value} />
+            <Number
+              key={index}
+              id={index}
+              value={this.state.gameStatus === "new" ? "?" : value}
+              clickable={this.isNumberAvailable(index)}
+            />
           ))}
         </div>
         <div className="footer">
-          <div className="timer-value">{this.props.initialSeconds}</div>
-          <button>Start</button>
+          {this.state.gameStatus === "new" ? (
+            <button>Start</button>
+          ) : (
+            <div className="timer-value">{this.state.remainingSeconds}</div>
+          )}
+          {['won', 'lost'].includes(this.state.gameStatus) && (
+            <button>Play Again</button>
+          )}
         </div>
       </div>
     );
