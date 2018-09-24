@@ -14,11 +14,17 @@ class Number extends React.Component {
 }
 
 class Game extends React.Component {
+  // state = {
+  //   gameStatus: 'new', //new, playing, won, lost
+  //   remainingSeconds: this.props.initialSeconds,
+  //   selectedIds: [],
+  // }
+
   state = {
-    gameStatus: 'new', //new, playing, won, lost
-    remainingSeconds: this.props.initialSeconds,
-    selectedIds: [],
-  }
+    gameStatus: "playing",
+    remainingSeconds: 7,
+    selectedIds: [0, 3, 4]
+  };
 
   challengeNumbers = Array.from({ length: this.props.challengeSize }).map(() =>
     randomNumberBetween(...this.props.challengeRange)
@@ -34,7 +40,8 @@ class Game extends React.Component {
       <div className="game">
         <h1 className="title">Numberz</h1>
         <div className="help">
-          Pick {this.props.challengeSize - 2} numbers that sum to the target in {this.props.initialSeconds} seconds
+          Pick {this.props.challengeSize - 2} numbers that sum to the target in{" "}
+          {this.props.initialSeconds} seconds
         </div>
         <div className="target">{this.target}</div>
         <div className="challenge-numbers">
@@ -51,9 +58,9 @@ class Game extends React.Component {
   }
 
   static bgColors = {
-    playing: '#ccc',
-    won: 'green',
-    lost: 'red',
+    playing: "#ccc",
+    won: "green",
+    lost: "red"
   };
 }
 
