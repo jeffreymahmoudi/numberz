@@ -14,6 +14,12 @@ class Number extends React.Component {
 }
 
 class Game extends React.Component {
+  state = {
+    gameStatus: 'new', //new, playing, won, lost
+    remainingSeconds: this.props.initialSeconds,
+    selectedIds: [],
+  }
+
   challengeNumbers = Array.from({ length: this.props.challengeSize }).map(() =>
     randomNumberBetween(...this.props.challengeRange)
   );
@@ -28,7 +34,7 @@ class Game extends React.Component {
       <div className="game">
         <h1 className="title">Numberz</h1>
         <div className="help">
-          Pick 4 numbers that sum to the target in 15 seconds
+          Pick {this.props.challengeSize - 2} numbers that sum to the target in {this.props.initialSeconds} seconds
         </div>
         <div className="target">{this.target}</div>
         <div className="challenge-numbers">
@@ -37,16 +43,22 @@ class Game extends React.Component {
           ))}
         </div>
         <div className="footer">
-          <div className="timer-value">15</div>
+          <div className="timer-value">{this.props.initialSeconds}</div>
           <button>Start</button>
         </div>
       </div>
     );
   }
+
+  static bgColors = {
+    playing: '#ccc',
+    won: 'green',
+    lost: 'red',
+  };
 }
 
 ReactDOM.render(
-  <Game challengeSize={6} challengeRange={[2, 9]} />,
+  <Game challengeSize={6} challengeRange={[2, 9]} initialSeconds={10} />,
   document.getElementById("root")
 );
 registerServiceWorker();
