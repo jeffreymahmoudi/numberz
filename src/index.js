@@ -4,16 +4,29 @@ import "./index.css";
 import registerServiceWorker from "./registerServiceWorker";
 import _ from "lodash";
 
+const colors = {
+  new: "lightblue",
+  playing: "deepskyblue",
+  won: "lightgreen",
+  lost: "lightcoral"
+};
+
 const randomNumberBetween = (min, max) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
 class Number extends React.Component {
+  handleClick = () => {
+    if (this.props.clickable) {
+      this.props.onClick(this.props.id);
+    }
+  };
+
   render() {
     return (
       <div
         className="number"
         style={{ opacity: this.props.clickable ? 1 : 0.3 }}
-        onClick={() => console.log(this.props.id)}
+        onClick={this.handleClick}
       >
         {this.props.value}
       </div>
@@ -22,26 +35,23 @@ class Number extends React.Component {
 }
 
 class Game extends React.Component {
-  // state = {
-  //   gameStatus: "new", //new, playing, won, lost
-  //   remainingSeconds: this.props.initialSeconds,
-  //   selectedIds: []
-  // };
-
   state = {
-    gameStatus: "playing",
-    remainingSeconds: 7,
-    selectedIds: [0, 3, 4]
+    gameStatus: "new", // new, playing, won, lost
+    remainingSeconds: this.props.initialSeconds,
+    selectedIds: []
   };
-
-  challengeNumbers = Array.from({ length: this.props.challengeSize }).map(() =>
-    randomNumberBetween(...this.props.challengeRange)
-  );
-
-  target = _.sampleSize(
-    this.challengeNumbers,
-    this.props.challengeSize - 2
-  ).reduce((acc, curr) => acc + curr, 0);
+  challengeNumbers = Array.from({
+    length: this.props.challengeSize
+  }).map(() => randomNumberBetween(...this.props.challengeRange));
+  target = _.sum(_.sampleSize(this.challengeNumbers, this.props.answerSize));
+  componentDidMount() {
+    if (this.props.autoPlay) {
+      this.startGame();
+    }
+  }
+  componentWillUnmount() {
+    clearInterval(this.intervalId);
+  }
 
   isNumberAvailable = numberIndex =>
     this.state.selectedIds.indexOf(numberIndex) === -1;
@@ -62,14 +72,17 @@ class Game extends React.Component {
   };
 
   selectNumber = numberIndex => {
-    if (this.state.gameStatus !== "playing") {
-      return;
-    }
     this.setState(
-      prevState => ({
-        selectedIds: [...prevState.selectedIds, numberIndex],
-        gameStatus: this.calcGameStatus([...prevState.selectedIds, numberIndex])
-      }),
+      prevState => {
+        if (prevState.gameStatus !== "playing") {
+          return null;
+        }
+        const newSelectedIds = [...prevState.selectedIds, numberIndex];
+        return {
+          selectedIds: newSelectedIds,
+          gameStatus: this.calcGameStatus(newSelectedIds)
+        };
+      },
       () => {
         if (this.state.gameStatus !== "playing") {
           clearInterval(this.intervalId);
@@ -77,65 +90,80 @@ class Game extends React.Component {
       }
     );
   };
-
-  calcGameStatus = selectedIds => {
-    const sumSelected = selectedIds.reduce(
+  calcGameStatus = newSelectedIds => {
+    const sumSelected = newSelectedIds.reduce(
       (acc, curr) => acc + this.challengeNumbers[curr],
       0
     );
-    if (sumSelected < this.target) {
+    if (newSelectedIds.length !== this.props.answerSize) {
       return "playing";
     }
     return sumSelected === this.target ? "won" : "lost";
   };
 
   render() {
+    const { gameStatus, remainingSeconds } = this.state;
     return (
       <div className="game">
-        <h1 className="title">Numberz</h1>
+        <h1>Numberz</h1>
         <div className="help">
-          Pick {this.props.challengeSize - 2} numbers that sum to the target in{" "}
+          Pick {this.props.answerSize} numbers that sum to the target in{" "}
           {this.props.initialSeconds} seconds
         </div>
-        <div
-          className="target"
-          style={{ backgroundColor: Game.bgColors[this.state.gameStatus] }}
-        >
-          {this.state.gameStatus === "new" ? "?" : this.target}
+        <div className="target" style={{ backgroundColor: colors[gameStatus] }}>
+          {gameStatus === "new" ? "TARGET" : this.target}
         </div>
         <div className="challenge-numbers">
           {this.challengeNumbers.map((value, index) => (
             <Number
               key={index}
               id={index}
-              value={this.state.gameStatus === "new" ? "?" : value}
+              value={gameStatus === "new" ? "?" : value}
               clickable={this.isNumberAvailable(index)}
+              onClick={this.selectNumber}
             />
           ))}
         </div>
         <div className="footer">
-          {this.state.gameStatus === "new" ? (
-            <button>Start</button>
-          ) : (
-            <div className="timer-value">{this.state.remainingSeconds}</div>
+          {gameStatus === "new" && (
+            <button onClick={this.startGame}>Start</button>
           )}
-          {["won", "lost"].includes(this.state.gameStatus) && (
-            <button>Play Again</button>
+
+          {gameStatus === "playing" && (
+            <div className="timer-value">{remainingSeconds}</div>
+          )}
+
+          {["won", "lost"].includes(gameStatus) && (
+            <button onClick={this.props.onPlayAgain}>Play Again</button>
           )}
         </div>
       </div>
     );
   }
-
-  static bgColors = {
-    playing: "#ccc",
-    won: "green",
-    lost: "red"
-  };
 }
 
-ReactDOM.render(
-  <Game challengeSize={6} challengeRange={[2, 9]} initialSeconds={10} />,
-  document.getElementById("root")
-);
+class GameContainer extends React.Component {
+  state = {
+    gameId: 1
+  };
+  resetGame = () =>
+    this.setState(prevState => ({
+      gameId: prevState.gameId + 1
+    }));
+  render() {
+    return (
+      <Game
+        key={this.state.gameId}
+        autoPlay={this.state.gameId > 1}
+        challengeRange={[2, 9]}
+        challengeSize={6}
+        answerSize={4}
+        initialSeconds={15}
+        onPlayAgain={this.resetGame}
+      />
+    );
+  }
+}
+
+ReactDOM.render(<GameContainer />, document.getElementById("root"));
 registerServiceWorker();
