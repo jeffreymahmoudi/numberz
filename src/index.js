@@ -3,6 +3,9 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import registerServiceWorker from "./registerServiceWorker";
 
+const randomNumberBetween = (min, max) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
 class Number extends React.Component {
   render() {
     return <div className="number">{this.props.value}</div>;
