@@ -46,6 +46,49 @@ class Game extends React.Component {
   isNumberAvailable = numberIndex =>
     this.state.selectedIds.indexOf(numberIndex) === -1;
 
+  startGame = () => {
+    this.setState({ gameStatus: "playing" }, () => {
+      this.intervalId = setInterval(() => {
+        this.setState(prevState => {
+          const newRemainingSeconds = prevState.remainingSeconds - 1;
+          if (newRemainingSeconds === 0) {
+            clearInterval(this.intervalId);
+            return { gameStatus: "lost", remainingSeconds: 0 };
+          }
+          return { remainingSeconds: newRemainingSeconds };
+        });
+      }, 1000);
+    });
+  };
+
+  selectNumber = numberIndex => {
+    if (this.state.gameStatus !== "playing") {
+      return;
+    }
+    this.setState(
+      prevState => ({
+        selectedIds: [...prevState.selectedIds, numberIndex],
+        gameStatus: this.calcGameStatus([...prevState.selectedIds, numberIndex])
+      }),
+      () => {
+        if (this.state.gameStatus !== "playing") {
+          clearInterval(this.intervalId);
+        }
+      }
+    );
+  };
+
+  calcGameStatus = selectedIds => {
+    const sumSelected = selectedIds.reduce(
+      (acc, curr) => acc + this.challengeNumbers[curr],
+      0
+    );
+    if (sumSelected < this.target) {
+      return "playing";
+    }
+    return sumSelected === this.target ? "won" : "lost";
+  };
+
   render() {
     return (
       <div className="game">
@@ -76,7 +119,7 @@ class Game extends React.Component {
           ) : (
             <div className="timer-value">{this.state.remainingSeconds}</div>
           )}
-          {['won', 'lost'].includes(this.state.gameStatus) && (
+          {["won", "lost"].includes(this.state.gameStatus) && (
             <button>Play Again</button>
           )}
         </div>
